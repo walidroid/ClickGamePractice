@@ -1,0 +1,111 @@
+let score = 0;
+let highScore = localStorage.getItem('highScore') || 0;
+let remainingButtons = 30;
+let gameButtons = [];
+let clickTimeout;
+
+const startButton = document.getElementById('start-button');
+const gameArea = document.getElementById('game-area');
+const instructionElement = document.getElementById('instruction');
+const scoreElement = document.getElementById('score');
+const highScoreElement = document.getElementById('high-score');
+
+startButton.addEventListener('click', startGame);
+
+function startGame() {
+    score = 0;
+    remainingButtons = 30;
+    gameButtons = [];
+    updateScore();
+    startButton.style.display = 'none';
+    instructionElement.textContent = "Cliquez sur les boutons : clic gauche, clic droit, double-clic !";
+    gameArea.innerHTML = '';
+    createGameButtons();
+}
+
+function createGameButtons() {
+    const actions = Array(10).fill(['Clic gauche', 'Clic droit', 'Double clic']).flat();
+    const colors = ['red', 'green', 'blue', 'yellow', 'purple', 'orange', 'cyan', 'magenta', 'white'];
+    
+    actions.sort(() => Math.random() - 0.5);
+
+    actions.forEach(action => {
+        const button = document.createElement('button');
+        button.textContent = action;
+        button.className = 'game-button';
+
+        // Ensure the button is within the game area
+        const buttonWidth = 100;  // Adjust based on actual button width
+        const buttonHeight = 50;  // Adjust based on actual button height
+        const maxLeft = gameArea.clientWidth - buttonWidth;
+        const maxTop = gameArea.clientHeight - buttonHeight;
+        
+        button.style.left = `${Math.random() * maxLeft}px`;
+        button.style.top = `${Math.random() * maxTop}px`;
+        button.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        button.addEventListener('click', (e) => handleClick(e, button, 'left'));
+        button.addEventListener('contextmenu', (e) => handleClick(e, button, 'right'));
+        button.addEventListener('dblclick', (e) => handleClick(e, button, 'double'));
+
+        gameArea.appendChild(button);
+        gameButtons.push(button);
+    });
+}
+
+function handleClick(e, button, clickType) {
+    e.preventDefault();
+
+    if (clickTimeout) {
+        clearTimeout(clickTimeout);
+        clickTimeout = null;
+    }
+
+    clickTimeout = setTimeout(() => {
+        if ((button.textContent === 'Clic gauche' && clickType === 'left') ||
+            (button.textContent === 'Clic droit' && clickType === 'right')) {
+            score++;
+            handleCorrectClick(button);
+        } else if (button.textContent === 'Double clic' && clickType === 'double') {
+            score += 2;
+            handleCorrectClick(button);
+        } else {
+            score--;
+        }
+        
+        updateScore();
+    }, 250);
+}
+
+function handleCorrectClick(button) {
+    button.style.display = 'none';
+    remainingButtons--;
+    
+    if (remainingButtons === 0) {
+        instructionElement.textContent = `Bravo ! Vous avez terminé le jeu ! Score final : ${score}`;
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('highScore', highScore);
+            updateHighScore();
+        }
+        setTimeout(resetGame, 2000);
+    }
+}
+
+function resetGame() {
+    instructionElement.textContent = "Cliquez sur 'Start Game' pour commencer!";
+    startButton.style.display = 'inline-block';
+    gameArea.innerHTML = '';
+    score = 0;
+    updateScore();
+}
+
+function updateScore() {
+    scoreElement.textContent = `Score: ${score}`;
+}
+
+function updateHighScore() {
+    highScoreElement.textContent = `High Score: ${highScore}`;
+}
+
+updateHighScore();
